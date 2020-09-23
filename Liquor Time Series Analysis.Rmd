@@ -1,0 +1,285 @@
+---
+title: "Liquor Time Series Analysis"
+author: "Sophie"
+date: "9/15/2020"
+output: html_document
+---
+
+
+
+```{r}
+product_monthly = read.csv("product_monthly.csv")
+store_monthly = read.csv("store_monthly.csv")
+store_prod_monthly = read.csv("store_prod_monthly.csv")
+```
+
+
+```{r}
+head(product_monthly)
+dim(product_monthly)
+```
+
+
+Total volume trend
+```{r}
+ts_total <- ts(product_monthly$total, start=c(2012, 1), end=c(2020, 8), frequency=12)
+
+plot(ts_total, type = 'l')#, grid.ticks.on='M')
+```
+
+Total volume seasonal decomposition 
+```{r}
+stl_total = stl(ts_total, s.window = "periodic")
+plot(stl_total, main = "Total Volume Seasonal Decomposition")
+```
+
+
+```{r}
+monthplot(ts_total)
+library(forecast)
+seasonplot(ts_total)
+```
+
+
+
+Auto arima forecast on total volume 
+
+```{r}
+ts_total_train = ts(product_monthly$total[1:78], start=c(2012, 1), end=c(2018, 6), frequency=12)
+ts_total_test= ts(product_monthly$total[79:104], start=c(2018, 7), end=c(2020, 8), frequency=12)
+```
+
+
+```{r}
+fit_total = auto.arima(ts_total_train , test = "adf", trace=T)
+```
+
+
+Forecast total volume
+```{r}
+plot(forecast(fit_total, h=26))
+```
+
+```{r}
+plot(forecast(fit_total, h=26))
+```
+
+
+Evaluating Arima model on total volume 
+```{r}
+
+AR_total.mean <-forecast(fit_total,h=26)$mean
+plot(ts_total_test, main="ARIMA Forecast vs. Actual on Total Volume 2018-07 - 2020-08", ylab="", xlab="Months", col="darkblue")  
+lines(AR_total.mean, col="red")
+```
+
+```{r}
+fit_total_forecast <-forecast(fit_total,h=26)
+accuracy(fit_total_forecast,ts_total_test)
+```
+
+
+
+
+
+Whisky trend
+```{r}
+
+ts_whisky <- ts(product_monthly$whisky, start=c(2012, 1), end=c(2020, 8), frequency=12)
+stl_whisky = stl(ts_whisky, s.window = "periodic")
+
+plot(ts_whisky, type = 'l')#, grid.ticks.on='M')
+```
+
+
+Whisky Seasonal decomposition 
+
+```{r}
+stl_whisky = stl(ts_whisky, s.window = "periodic")
+plot(stl_whisky)
+```
+
+
+ACF test
+```{r}
+acf(ts_whisky, lag.max = 100)
+pacf(ts_whisky, lag.max = 100)
+```
+
+
+Choosing the beginning 75% of the monthly data (78 months) as training, remaining 25% as test
+```{r}
+ts_whisky_train = ts(product_monthly$whisky[1:78], start=c(2012, 1), end=c(2018, 6), frequency=12)
+ts_whisky_test= ts(product_monthly$whisky[79:104], start=c(2018, 7), end=c(2020, 8), frequency=12)
+```
+
+
+```{r}
+fit1 = auto.arima(ts_whisky_train , test = "adf", trace=T)
+```
+
+Auto Arima result with adf test
+```{r}
+summary(fit1)
+checkresiduals(fit1)
+```
+
+```{r}
+qqnorm(fit1$residuals)
+```
+
+
+Forecast fit1
+```{r}
+plot(forecast(fit1, h=26))
+```
+
+```{r}
+# plot of the test set and its prediction only
+
+AR.mean <-forecast(fit1,h=26)$mean
+plot(ts_whisky_test, main="ARIMA Forecast on Whisky Volume 2018-07 - 2020-08", ylab="", xlab="Months", col="darkblue")  
+lines(AR.mean, col="red")
+```
+
+```{r}
+fit1_forecast <-forecast(fit1,h=26)
+accuracy(fit1_forecast,ts_whisky_test)
+```
+
+
+
+Supermarket - Whisky 
+
+
+```{r}
+ts_sw <- ts(store_prod_monthly$Supermarketwhisky, start=c(2012, 1), end=c(2020, 8), frequency=12)
+stl_sw = stl(ts_sw, s.window = "periodic")
+plot(ts_sw, type = 'l')#, grid.ticks.on='M')
+plot(stl_sw)
+
+```
+
+```{r}
+ts_sw_train = ts(store_prod_monthly$Supermarketwhisky[1:78], start=c(2012, 1), end=c(2018, 6), frequency=12)
+ts_sw_test= ts(store_prod_monthly$Supermarketwhisky[79:104], start=c(2018, 7), end=c(2020, 8), frequency=12)
+
+```
+
+
+
+```{r}
+fit_sw = auto.arima(ts_sw_train, test = "adf", trace=T)
+summary(fit_sw)
+checkresiduals(fit_sw)
+qqnorm(fit_sw$residuals)
+```
+
+```{r}
+plot(forecast(fit_sw, h=30))
+```
+
+```{r}
+forecast(fit_sw, h=30)
+```
+
+```{r}
+575372.6 / 360
+```
+
+
+```{r}
+AR.mean.sw <-forecast(fit_sw,h=26)$mean
+plot(ts_sw_test, main="ARIMA Forecast on Supermarket Whisky Volume 2018-07 - 2020-08", ylab="", xlab="Months", col="darkblue")  
+lines(AR.mean.sw, col="red")
+
+```
+
+```{r}
+fit_sw_forecast <-forecast(fit_sw,h=26)
+accuracy(fit_sw_forecast,ts_sw_test)
+```
+
+
+
+Supermarket + Vodka 
+```{r}
+ts_sv <- ts(store_prod_monthly$Supermarketvodka, start=c(2012, 1), end=c(2020, 8), frequency=12)
+ts_sv_train = ts(store_prod_monthly$Supermarketvodka[1:78], start=c(2012, 1), end=c(2018, 6), frequency=12)
+ts_sv_test= ts(store_prod_monthly$Supermarketvodka[79:104], start=c(2018, 7), end=c(2020, 8), frequency=12)
+
+```
+
+
+```{r}
+fit_sv = auto.arima(ts_sv_train, test = "adf", trace=T)
+summary(fit_sv)
+checkresiduals(fit_sv)
+qqnorm(fit_sv$residuals)
+```
+
+```{r}
+AR.mean.sv <-forecast(fit_sv,h=26)$mean
+plot(ts_sv_test, main="ARIMA Forecast on Supermarket Whisky Volume 2018-07 - 2020-08", ylab="", xlab="Months", col="darkblue")  
+lines(AR.mean.sv, col="red")
+```
+
+```{r}
+fit_sv_forecast <-forecast(fit_sv,h=26)
+accuracy(fit_sv_forecast,ts_sv_test)
+```
+
+
+
+
+
+
+
+Store type 
+```{r}
+head(store_monthly)
+
+ts_supermarket = ts(store_monthly$Supermarket, start=c(2012, 1), end=c(2020, 8), frequency=12)
+ts_conv = ts(store_monthly$Convenience.Store, start=c(2012, 1), end=c(2020, 8), frequency=12)
+ts_liquor = ts(store_monthly$Liquor.Tobacco.Store, start=c(2012, 1), end=c(2020, 8), frequency=12)
+plot(ts_supermarket, type = "l")
+plot(ts_conv, type = "l")
+plot(ts_liquor, type = "l")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
